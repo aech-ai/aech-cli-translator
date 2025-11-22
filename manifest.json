@@ -1,0 +1,18 @@
+{
+    "name": "translator",
+    "description": "translator capability",
+    "actions": [
+        {
+            "name": "translate",
+            "description": "Translates a document with enterprise context and verification.",
+            "parameters": [
+                "input_file",
+                "target_lang",
+                "context_file",
+                "output_dir"
+            ],
+            "required_scopes": []
+        }
+    ],
+    "example": "python3 /capabilities/public/aech-cli-translator/main.py translate <input_file> --target-lang <lang> --output-dir <dir>"
+}

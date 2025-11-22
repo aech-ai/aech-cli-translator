@@ -1,4 +1,4 @@
 typer
-litellm
+pydantic-ai
 rich
 python-dotenv
