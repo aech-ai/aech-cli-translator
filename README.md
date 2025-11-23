@@ -9,15 +9,16 @@ three agents (translate, back-translate, audit) and exposes a single
 - Accepts: Markdown source file path, target language code, optional Markdown
   context/termbase, output directory.
 - Produces (in `output_dir`):
-  - `<stem>_<lang>.md`: translated Markdown that preserves structure/formatting.
-  - `<stem>_translation_report.md`: QA summary from back-translation with:
+  - Translation: `<stem>_<lang>.md` (Markdown only; render to DOCX/PDF for users).
+  - QA report: `<stem>_translation_report.md` with:
     - Overall Quality Assessment: Pass / Needs Review / Fail.
     - Key discrepancies (meaning/tone/terminology).
     - Recommendations (what to fix if not Pass).
 - Offline-friendly: operates on local files only.
-- Expected automation: after running, attach both outputs and include a short QA
-  summary in the response to the requester (email/DM/ticket). Make clear whether
-  it Passed or needs review and call out any specific risks.
+- Expected automation: after running, render DOCX/PDF from the Markdown outputs,
+  attach/link those user-friendly files, and include a short QA summary in the
+  response to the requester (email/DM/ticket). Make clear whether it Passed or
+  needs review and call out any specific risks.
 
 ## Usage
 
@@ -50,7 +51,7 @@ JSON manifest. For human-friendly help, use `aech-cli-translator translate --hel
    - Translation: `<stem>_<lang>.md`.
    - QA report: `<stem>_translation_report.md`.
 3. Respond to the requester (email/DM/ticket) and:
-   - Attach or link both files.
+   - Render and attach/link DOCX/PDF outputs (avoid raw Markdown unless requested).
    - Summarize QA in 2-4 bullets: overall quality (Pass/Needs Review/Fail),
      notable discrepancies, and any recommendations.
    - Call out any blockers (missing context file, unreadable source, etc.).
