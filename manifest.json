@@ -1,12 +1,12 @@
 {
     "name": "translator",
     "type": "cli",
-    "description": "Run an end-to-end enterprise translation workflow. The CLI reads a Markdown source file, optionally merges an enterprise context file to enforce terminology, translates to the requested language, back-translates for QA, and emits both the translated markdown and a quality report comparing the original and back-translation. Inputs are filesystem paths, so it works offline inside a sandbox. Outputs are saved into the caller-provided directory with language-specific filenames plus a `_translation_report.md`. Example: `aech-cli-translator translate docs/blog.md es --context termbase.md --output-dir out/translations`.",
+    "description": "Run an end-to-end enterprise translation workflow. Given a Markdown source and optional enterprise context, the CLI translates to the requested language, back-translates for QA, and writes two files to the caller-provided output directory: `<stem>_<lang>.md` containing the translated Markdown and `<stem>_translation_report.md` summarizing QA (overall quality: Pass/Needs Review/Fail, key discrepancies, recommendations). Automations should attach both files and include a short QA summary in the response to the requester. Example: `aech-cli-translator translate docs/blog.md es --context termbase.md --output-dir out/translations`.",
     "command": "aech-cli-translator",
     "actions": [
         {
             "name": "translate",
-            "description": "Translate a Markdown document into a target language, optionally applying enterprise context. The command saves two files in `output_dir`: `<stem>_<lang>.md` containing the translated content and `<stem>_translation_report.md` containing the QA comparison between the original and the automatic back-translation. Example: `translate proposal.md fr --context brand-guide.md --output-dir build/locale`.",
+            "description": "Translate a Markdown document into a target language, optionally applying enterprise context. Outputs two files in `output_dir`: `<stem>_<lang>.md` with the translated Markdown and `<stem>_translation_report.md` with QA from the back-translation (overall quality, discrepancies, recommendations). Example: `translate proposal.md fr --context brand-guide.md --output-dir build/locale`.",
             "parameters": [
                 {
                     "name": "input_file",
