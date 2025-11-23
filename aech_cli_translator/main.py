@@ -12,7 +12,7 @@ from rich.console import Console
 # Load environment variables from .env file if present
 load_dotenv()
 
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console()
 
 AECH_MANIFEST = {
@@ -53,6 +53,11 @@ AECH_MANIFEST = {
     ],
     "available_in_sandbox": True,
 }
+
+
+@app.callback(invoke_without_command=False)
+def main() -> None:
+    """Aech CLI Translator root command."""
 
 
 def _should_emit_manifest(argv: list[str]) -> bool:
