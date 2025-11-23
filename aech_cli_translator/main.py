@@ -3,6 +3,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Optional
+import functools
+import importlib.resources
 
 import typer
 from dotenv import load_dotenv
@@ -15,130 +17,36 @@ load_dotenv()
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console()
 
-AECH_MANIFEST = {
-    "name": "translator",
-    "type": "cli",
-    "description": (
-        "Run an end-to-end enterprise translation workflow. Given a Markdown"
-        " source and optional enterprise context, the CLI translates to the"
-        " requested language, back-translates for QA, and writes Markdown"
-        " outputs to the caller-provided directory: `<stem>_<lang>.md` and"
-        " `<stem>_translation_report.md` (overall quality, discrepancies,"
-        " recommendations). Automations should render user-facing DOCX/PDF from"
-        " these Markdown files, attach them, and include a brief QA summary in"
-        " the response to the requester. Example: `aech-cli-translator translate"
-        " docs/blog.md es --context termbase.md --output-dir out/translations`."
-    ),
-    "command": "aech-cli-translator",
-    "actions": [
-        {
-            "name": "translate",
-            "description": (
-                "Translate a Markdown document into a target language, optionally"
-                " applying enterprise context. Outputs in `output_dir`:"
-                " `<stem>_<lang>.md` with the translated Markdown and"
-                " `<stem>_translation_report.md` with QA from the back-"
-                " translation (overall quality, discrepancies, recommendations)."
-                " Automations should render user-facing DOCX/PDF from these files"
-                " before responding to end users. Example: `translate proposal.md"
-                " fr --context brand-guide.md --output-dir build/locale`."
-            ),
-            "parameters": [
-                {"name": "input_file", "type": "argument", "required": True},
-                {"name": "target_lang", "type": "argument", "required": True},
-                {"name": "context", "type": "option", "required": False},
-                {"name": "output_dir", "type": "option", "required": True},
-            ],
-        }
-    ],
-    "documentation": {
-        "readme": (
-            "# Aech CLI Translator\n\n"
-            "Enterprise translation workflow that leverages the Aech runtime. The"
-            " CLI wraps three agents (translate, back-translate, audit) and"
-            " exposes a single `translate` command.\n\n"
-            "## What this CLI does (for Agent Aech)\n\n"
-            "- Accepts: Markdown source file path, target language code, optional"
-            " Markdown context/termbase, output directory.\n"
-            "- Produces (in `output_dir`):\n"
-            "  - Translation: `<stem>_<lang>.md` (Markdown only; render to DOCX/PDF"
-            " downstream for users).\n"
-            "  - QA report: `<stem>_translation_report.md` with:\n"
-            "    - Overall Quality Assessment: Pass / Needs Review / Fail.\n"
-            "    - Key discrepancies (meaning/tone/terminology).\n"
-            "    - Recommendations (what to fix if not Pass).\n"
-            "- Offline-friendly: operates on local files only.\n"
-            "- Expected automation: after running, render DOCX/PDF from the Markdown"
-            " outputs, attach or link those user-friendly files, and include a"
-            " short QA summary in the response (email/DM/ticket). Make clear"
-            " whether it Passed or needs review and call out any specific risks.\n\n"
-            "## Usage\n\n"
-            "The CLI uses an explicit `translate` subcommand. Invoke it with the"
-            " source Markdown path and the target language, plus an output"
-            " directory. Example:\n\n"
-            "```\n"
-            "aech-cli-translator translate docs/blog.md es --output-dir"
-            " build/locale --context termbase.md\n"
-            "```\n\n"
-            "- Command: `translate`\n"
-            "- First positional: the input Markdown path.\n"
-            "- Second positional: the target language code (e.g., `es`, `fr`,"
-            " `de`).\n"
-            "- `--output-dir` is required; `--context` is optional.\n"
-            "Note: `aech-cli-translator --help` is reserved for the installer and"
-            " emits the JSON manifest. For human-friendly help, use `aech-cli-"
-            "translator translate --help`.\n\n"
-            "## Expected automation workflow (agent script)\n\n"
-            "1. Run the CLI with the user’s source file, target language, optional"
-            " context, and an output directory the user can access.\n"
-            "2. Read the generated files:\n"
-            "   - Translation: `<stem>_<lang>.md`.\n"
-            "   - QA report: `<stem>_translation_report.md`.\n"
-            "3. Respond to the requester (email/DM/ticket) and:\n"
-            "   - Render and attach/link DOCX/PDF outputs (avoid raw Markdown"
-            " unless requested).\n"
-            "   - Summarize QA in 2-4 bullets: overall quality (Pass/Needs Review/"
-            "Fail), notable discrepancies, and any recommendations.\n"
-            "   - Call out any blockers (missing context file, unreadable source,"
-            " etc.).\n\n"
-            "## QA report format\n\n"
-            "The report is freeform Markdown generated by the QA agent. At minimum"
-            " it should contain:\n"
-            "- Overall Quality Assessment: Pass / Needs Review / Fail.\n"
-            "- Key discrepancies: meaning, tone, terminology issues found via"
-            " back-translation.\n"
-            "- Recommendations: what to adjust in the translation.\n"
-        ),
-        "usage": "aech-cli-translator translate <input_file> <target_lang> --output-dir <dir> [--context <ctx>]",
-        "inputs": {
-            "input_file": "Path to source Markdown",
-            "target_lang": "Target language code (e.g., es, fr, de)",
-            "context": "Optional path to Markdown context/termbase",
-            "output_dir": "Required directory for outputs"
-        },
-        "outputs": {
-            "translation_md": {
-                "path": "<stem>_<lang>.md",
-                "description": "Translated Markdown. Agent should render to user-friendly DOCX/PDF before delivery."
-            },
-            "qa_report_md": {
-                "path": "<stem>_translation_report.md",
-                "description": "QA Markdown (Pass/Needs Review/Fail, discrepancies, recommendations). Include a brief summary in the response."
-            }
-        },
-        "automation_expectations": [
-            "Render and attach/link DOCX and PDF outputs for the requester (avoid raw Markdown unless explicitly requested)",
-            "Include a short QA summary: Pass/Needs Review/Fail, discrepancies, recommendations",
-            "Call out blockers (missing context, unreadable source, conversion failures)"
-        ],
-        "qa_report_format": [
-            "Overall Quality Assessment: Pass / Needs Review / Fail",
-            "Key discrepancies: meaning/tone/terminology issues found via back-translation",
-            "Recommendations: what to adjust in the translation"
-        ]
-    },
-    "available_in_sandbox": True,
-}
+@functools.lru_cache(maxsize=1)
+def load_manifest() -> dict:
+    """
+    Load the manifest from the package resources or local file system.
+    """
+    # Try loading from package resources first (installed mode)
+    try:
+        # For Python 3.9+
+        ref = importlib.resources.files("aech_cli_translator") / "manifest.json"
+        with ref.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, ModuleNotFoundError, AttributeError):
+        # AttributeError can happen if importlib.resources.files is not available (pre-3.9)
+        # though we require >=3.10, it's good practice.
+        pass
+
+    # Fallback to local file relative to this script (dev mode)
+    # Check package directory first (in case of symlink or copy)
+    local_manifest_pkg = Path(__file__).parent / "manifest.json"
+    if local_manifest_pkg.exists():
+        with local_manifest_pkg.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    # Check repo root (if running from source)
+    local_manifest_root = Path(__file__).parent.parent / "manifest.json"
+    if local_manifest_root.exists():
+        with local_manifest_root.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    raise FileNotFoundError("manifest.json not found in package or local directory.")
 
 
 @app.callback(invoke_without_command=False)
@@ -153,7 +61,7 @@ def _should_emit_manifest(argv: list[str]) -> bool:
 
 
 def _print_manifest() -> None:
-    print(json.dumps(AECH_MANIFEST, indent=2))
+    print(json.dumps(load_manifest(), indent=2))
 
 # Define Agents
 translator_agent = Agent(
