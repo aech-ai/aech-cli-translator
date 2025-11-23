@@ -4,6 +4,29 @@ Enterprise translation workflow that leverages the Aech runtime. The CLI wraps
 three agents (translate, back-translate, audit) and exposes a single
 `translate` command.
 
+## Usage
+
+The binary is the translation command itself (no subcommand). Run it with the
+source Markdown file and the target language, plus an output directory. Example:
+
+```bash
+# optional: set up a virtualenv and install locally
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# translate to Spanish and drop outputs under build/locale
+aech-cli-translator docs/blog.md es --output-dir build/locale --context termbase.md
+```
+
+- First positional: the input Markdown path.
+- Second positional: the target language code (e.g., `es`, `fr`, `de`).
+- `--output-dir` is required; `--context` is optional.
+
+Note: `aech-cli-translator --help` is reserved for the installer and emits the
+JSON manifest. If you want Typer’s human help output, pass any placeholder
+argument before `--help`, e.g., `aech-cli-translator placeholder --help`.
+
 ## Manifest-Based `--help`
 
 Aech installs each capability by calling `--help` on every discovered binary.
