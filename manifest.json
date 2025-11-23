@@ -1,18 +1,19 @@
 {
     "name": "translator",
-    "description": "translator capability",
+    "type": "cli",
+    "description": "Run an end-to-end enterprise translation workflow. The CLI reads a Markdown source file, optionally merges an enterprise context file to enforce terminology, translates to the requested language, back-translates for QA, and emits both the translated markdown and a quality report comparing the original and back-translation. Inputs are filesystem paths, so it works offline inside a sandbox. Outputs are saved into the caller-provided directory with language-specific filenames plus a `_translation_report.md`. Example: `aech-cli-translator translate docs/blog.md es --context termbase.md --output-dir out/translations`.",
+    "command": "aech-cli-translator",
     "actions": [
         {
             "name": "translate",
-            "description": "Translates a document with enterprise context and verification.",
+            "description": "Translate a Markdown document into a target language, optionally applying enterprise context. The command saves two files in `output_dir`: `<stem>_<lang>.md` containing the translated content and `<stem>_translation_report.md` containing the QA comparison between the original and the automatic back-translation. Example: `translate proposal.md fr --context brand-guide.md --output-dir build/locale`.",
             "parameters": [
-                "input_file",
-                "target_lang",
-                "context_file",
-                "output_dir"
-            ],
-            "required_scopes": []
+                {"name": "input_file", "type": "argument", "required": true},
+                {"name": "target_lang", "type": "argument", "required": true},
+                {"name": "context", "type": "option", "required": false},
+                {"name": "output_dir", "type": "option", "required": true}
+            ]
         }
     ],
-    "example": "python3 /capabilities/public/aech-cli-translator/main.py translate <input_file> --target-lang <lang> --output-dir <dir>"
+    "available_in_sandbox": true
 }

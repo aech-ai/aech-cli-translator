@@ -14,4 +14,4 @@ dependencies = [
 ]
 
 [project.scripts]
-aech-cli-translator = "aech_cli_translator.main:app"
+aech-cli-translator = "aech_cli_translator.main:run"

@@ -1,17 +1,68 @@
-import typer
-import os
 import asyncio
+import json
+import sys
 from pathlib import Path
 from typing import Optional
+
+import typer
+from dotenv import load_dotenv
 from pydantic_ai import Agent
 from rich.console import Console
-from dotenv import load_dotenv
 
 # Load environment variables from .env file if present
 load_dotenv()
 
 app = typer.Typer()
 console = Console()
+
+AECH_MANIFEST = {
+    "name": "translator",
+    "type": "cli",
+    "description": (
+        "Run an end-to-end enterprise translation workflow. The CLI reads a"
+        " Markdown source file, optionally merges an enterprise context file"
+        " to enforce terminology, translates to the requested language,"
+        " back-translates for QA, and emits both the translated markdown and"
+        " a quality report comparing the original and back-translation. Inputs"
+        " are filesystem paths, so it works offline inside a sandbox. Outputs"
+        " are saved into the caller-provided directory with language-specific"
+        " filenames plus a `_translation_report.md`. Example:"
+        " `aech-cli-translator translate docs/blog.md es --context"
+        " termbase.md --output-dir out/translations`."
+    ),
+    "command": "aech-cli-translator",
+    "actions": [
+        {
+            "name": "translate",
+            "description": (
+                "Translate a Markdown document into a target language, optionally"
+                " applying enterprise context. The command saves two files in"
+                " `output_dir`: `<stem>_<lang>.md` containing the translated"
+                " content and `<stem>_translation_report.md` containing the QA"
+                " comparison between the original and the automatic"
+                " back-translation. Example: `translate proposal.md fr --context"
+                " brand-guide.md --output-dir build/locale`."
+            ),
+            "parameters": [
+                {"name": "input_file", "type": "argument", "required": True},
+                {"name": "target_lang", "type": "argument", "required": True},
+                {"name": "context", "type": "option", "required": False},
+                {"name": "output_dir", "type": "option", "required": True},
+            ],
+        }
+    ],
+    "available_in_sandbox": True,
+}
+
+
+def _should_emit_manifest(argv: list[str]) -> bool:
+    """Return True when CLI should output the manifest instead of help text."""
+
+    return len(argv) == 2 and argv[1] in ("-h", "--help")
+
+
+def _print_manifest() -> None:
+    print(json.dumps(AECH_MANIFEST, indent=2))
 
 # Define Agents
 translator_agent = Agent(
@@ -101,7 +152,6 @@ async def run_translation_flow(input_path: Path, target_lang: str, context_text:
     report_file.write_text(report_text)
     console.print(f"[green]Report saved to {report_file}[/green]")
     
-    import json
     print(json.dumps({
         "translated_file": str(translated_file),
         "report_file": str(report_file)
@@ -141,5 +191,15 @@ def translate(
         console.print(f"[bold red]Error during translation flow:[/bold red] {e}")
         raise typer.Exit(code=1)
 
-if __name__ == "__main__":
+def run() -> None:
+    """CLI entry point that handles manifest-aware help output."""
+
+    if _should_emit_manifest(sys.argv):
+        _print_manifest()
+        return
+
     app()
+
+
+if __name__ == "__main__":
+    run()
