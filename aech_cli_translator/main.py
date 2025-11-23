@@ -157,7 +157,7 @@ async def run_translation_flow(input_path: Path, target_lang: str, context_text:
         "report_file": str(report_file)
     }))
 
-@app.command()
+@app.command(name="translate")
 def translate(
     input_file: str = typer.Argument(..., help="Input file path"),
     target_lang: str = typer.Argument(..., help="Target language code"),

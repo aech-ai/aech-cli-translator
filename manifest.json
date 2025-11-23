@@ -8,10 +8,26 @@
             "name": "translate",
             "description": "Translate a Markdown document into a target language, optionally applying enterprise context. The command saves two files in `output_dir`: `<stem>_<lang>.md` containing the translated content and `<stem>_translation_report.md` containing the QA comparison between the original and the automatic back-translation. Example: `translate proposal.md fr --context brand-guide.md --output-dir build/locale`.",
             "parameters": [
-                {"name": "input_file", "type": "argument", "required": true},
-                {"name": "target_lang", "type": "argument", "required": true},
-                {"name": "context", "type": "option", "required": false},
-                {"name": "output_dir", "type": "option", "required": true}
+                {
+                    "name": "input_file",
+                    "type": "argument",
+                    "required": true
+                },
+                {
+                    "name": "target_lang",
+                    "type": "argument",
+                    "required": true
+                },
+                {
+                    "name": "context",
+                    "type": "option",
+                    "required": false
+                },
+                {
+                    "name": "output_dir",
+                    "type": "option",
+                    "required": true
+                }
             ]
         }
     ],
