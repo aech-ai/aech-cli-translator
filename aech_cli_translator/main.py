@@ -9,7 +9,23 @@ import importlib.resources
 import typer
 from dotenv import load_dotenv
 from pydantic_ai import Agent
+import logging
+from rich.logging import RichHandler
 from rich.console import Console
+
+# Define logger
+logger = logging.getLogger("aech_cli_translator")
+
+def setup_logging(verbose: bool = False):
+    """Configure logging with RichHandler."""
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(rich_tracebacks=True, markup=True)]
+    )
+
 
 # Load environment variables from .env file if present
 load_dotenv()
@@ -101,7 +117,9 @@ async def run_translation_flow(input_path: Path, target_lang: str, context_text:
     source_text = input_path.read_text()
 
     # 1. Translate
-    console.print(f"[blue]Translating {input_path.name} to {target_lang}...[/blue]")
+    logger.info(f"Translating {input_path.name} to {target_lang}...")
+    logger.debug(f"Reading input file: {input_path}")
+
     
     translation_prompt = f"""
     Target Language: {target_lang}
@@ -113,27 +131,36 @@ async def run_translation_flow(input_path: Path, target_lang: str, context_text:
     {source_text}
     """
     
+    logger.debug("Sending translation request to LLM...")
     result = await translator_agent.run(translation_prompt)
+    logger.debug("Received translation response.")
+
     translated_text = result.output
     
     # Save translation
     translated_filename = f"{input_path.stem}_{target_lang}.md"
     translated_file = out_path / translated_filename
     translated_file.write_text(translated_text)
-    console.print(f"[green]Translation saved to {translated_file}[/green]")
+    translated_file.write_text(translated_text)
+    logger.info(f"Translation saved to {translated_file}")
 
     # 2. Back-Translate
-    console.print(f"[blue]Back-translating for verification...[/blue]")
+    logger.info(f"Back-translating for verification...")
+
     back_translation_prompt = f"""
     Translate the following {target_lang} text back to the original language:
     {translated_text}
     """
     
+    logger.debug("Sending back-translation request to LLM...")
     bt_result = await back_translator_agent.run(back_translation_prompt)
+    logger.debug("Received back-translation response.")
+
     back_translated_text = bt_result.output
 
     # 3. Verify / Generate Report
-    console.print(f"[blue]Generating Quality Report...[/blue]")
+    logger.info(f"Generating Quality Report...")
+
     report_prompt = f"""
     Original Text:
     {source_text}
@@ -142,14 +169,19 @@ async def run_translation_flow(input_path: Path, target_lang: str, context_text:
     {back_translated_text}
     """
     
+    logger.debug("Sending audit request to LLM...")
     report_result = await auditor_agent.run(report_prompt)
+    logger.debug("Received audit response.")
+
     report_text = report_result.output
     
     # Save report
     report_filename = f"{input_path.stem}_translation_report.md"
     report_file = out_path / report_filename
     report_file.write_text(report_text)
-    console.print(f"[green]Report saved to {report_file}[/green]")
+    report_file.write_text(report_text)
+    logger.info(f"Report saved to {report_file}")
+
     
     print(json.dumps({
         "translated_file": str(translated_file),
@@ -161,17 +193,21 @@ def translate(
     input_file: str = typer.Argument(..., help="Input file path"),
     target_lang: str = typer.Argument(..., help="Target language code"),
     context_file: Optional[str] = typer.Option(None, "--context", "-c", help="Path to a markdown file containing enterprise context"),
-    output_dir: str = typer.Option(..., "--output-dir", "-o", help="Directory to save output")
+    output_dir: str = typer.Option(..., "--output-dir", "-o", help="Directory to save output"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging")
 ):
     """
     Translates a document with enterprise context and back-translation verification.
     """
+    setup_logging(verbose)
+
     input_path = Path(input_file)
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
     if not input_path.exists():
-        console.print(f"[bold red]Input file not found:[/bold red] {input_file}")
+        logger.error(f"Input file not found: {input_file}")
+
         raise typer.Exit(code=1)
 
     # Load context if provided
@@ -181,13 +217,15 @@ def translate(
         if ctx_path.exists():
             context_text = ctx_path.read_text()
         else:
-            console.print(f"[yellow]Warning: Context file {context_file} not found. Proceeding without context.[/yellow]")
+            logger.warning(f"Context file {context_file} not found. Proceeding without context.")
+
 
     # Run async flow
     try:
         asyncio.run(run_translation_flow(input_path, target_lang, context_text, out_path))
     except Exception as e:
-        console.print(f"[bold red]Error during translation flow:[/bold red] {e}")
+        logger.exception(f"Error during translation flow: {e}")
+
         raise typer.Exit(code=1)
 
 def run() -> None:
