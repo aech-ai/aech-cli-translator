@@ -1,37 +1,42 @@
 {
     "name": "translator",
     "type": "cli",
-    "description": "Run an end-to-end enterprise translation workflow. Given a Markdown source and optional enterprise context, the CLI translates to the requested language, back-translates for QA, and writes Markdown outputs to the caller-provided directory: `<stem>_<lang>.md` and `<stem>_translation_report.md` (overall quality, discrepancies, recommendations). Automations should render user-facing DOCX/PDF from these Markdown files, attach them, and include a brief QA summary in the response to the requester. Example: `aech-cli-translator translate docs/blog.md es --context termbase.md --output-dir out/translations`.",
+    "description": "Translate Markdown documents to other languages. Accepts a Markdown file and target language, produces translated Markdown and a QA report with quality assessment.",
     "command": "aech-cli-translator",
     "actions": [
         {
             "name": "translate",
-            "description": "Translate a Markdown document into a target language, optionally applying enterprise context. Outputs in `output_dir`: `<stem>_<lang>.md` with the translated Markdown and `<stem>_translation_report.md` with QA from the back-translation (overall quality, discrepancies, recommendations). Automations should render user-facing DOCX/PDF from these files before responding to end users. Example: `translate proposal.md fr --context brand-guide.md --output-dir build/locale`.",
+            "description": "Translate a Markdown document to another language with QA verification. Input: Markdown file path. Output: <output-dir>/<stem>_<lang>.md (translated document) and <output-dir>/<stem>_translation_report.md (QA report with Pass/Needs Review/Fail assessment). Use when user needs a document translated to another language.",
             "parameters": [
                 {
                     "name": "input_file",
                     "type": "argument",
-                    "required": true
+                    "required": true,
+                    "description": "Path to the Markdown file to translate."
                 },
                 {
                     "name": "target_lang",
                     "type": "argument",
-                    "required": true
+                    "required": true,
+                    "description": "Target language as ISO 639-1 code. Examples: es (Spanish), fr (French), de (German), ja (Japanese), zh (Chinese)."
                 },
                 {
                     "name": "context",
                     "type": "option",
-                    "required": false
+                    "required": false,
+                    "description": "Path to a Markdown file containing enterprise terminology, style guides, or glossary. Use when translation must follow specific brand voice or technical terms."
                 },
                 {
                     "name": "output-dir",
                     "type": "option",
-                    "required": true
+                    "required": true,
+                    "description": "Directory where output files will be written. Will be created if it doesn't exist."
                 },
                 {
                     "name": "verbose",
                     "type": "option",
-                    "required": false
+                    "required": false,
+                    "description": "Enable detailed logging to stderr. Use for debugging translation issues."
                 }
             ]
         }
