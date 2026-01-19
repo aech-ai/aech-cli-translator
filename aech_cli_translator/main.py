@@ -79,10 +79,10 @@ def _should_emit_manifest(argv: list[str]) -> bool:
 def _print_manifest() -> None:
     print(json.dumps(load_manifest(), indent=2))
 
-# Define Agents
+# Define Agents (using instructions per pydantic-ai best practices)
 translator_agent = Agent(
     'openai:gpt-4.1',
-    system_prompt=(
+    instructions=(
         "You are an expert enterprise translator. "
         "Translate the content accurately, preserving formatting (Markdown). "
         "Use the provided Enterprise Context to ensure correct terminology. "
@@ -92,7 +92,7 @@ translator_agent = Agent(
 
 back_translator_agent = Agent(
     'openai:gpt-4.1',
-    system_prompt=(
+    instructions=(
         "You are an expert translator. "
         "Translate the text back to the original language (English/Source). "
         "Output ONLY the translated markdown."
@@ -101,7 +101,7 @@ back_translator_agent = Agent(
 
 auditor_agent = Agent(
     'openai:gpt-4.1',
-    system_prompt=(
+    instructions=(
         "You are a Translation Quality Assurance Auditor. "
         "Compare the Original Text and the Back-Translated Text. "
         "Identify any significant discrepancies in meaning, tone, or terminology. "
